@@ -48,6 +48,8 @@ from graph.func.graph_func import (
 )
 from langgraph.graph import StateGraph, END
 from doc.vstore.vstore_main import VStoreMain, VectorStoreProvider
+from langgraph.checkpoint.redis import RedisSaver
+from uuid import uuid4
 
 
 class GraphMain:
@@ -212,12 +214,15 @@ class GraphMain:
         Raises:
             Exception: 编译失败或图表生成失败时抛出异常
         """
-        self._graph = self.workflow.compile()
+        DB_URI = "redis://localhost:6379/10"
+        conn_ctx = RedisSaver.from_conn_string(DB_URI)
+        memory = conn_ctx.__enter__()
+        self._graph = self.workflow.compile(checkpointer=memory)
         # 生成流程图png保存到当前目录
         self._graph.get_graph().draw_mermaid_png(output_file_path="graph.png")
         return self._graph
 
-    def stream(self, user_inputs: str):
+    def stream(self, user_inputs: str, config):
         """
         执行工作流并返回流式结果
 
@@ -259,7 +264,10 @@ class GraphMain:
         )
         retriever = VectorStore.as_retriever()
         inputs = {"question": user_inputs, "max_retries": 3, "retriever": retriever}
-        return self._graph.stream(inputs, stream_mode="values")
+        return self._graph.stream(inputs, stream_mode="values", config=config)
+
+    def get_state_history(self, config):
+        return self._graph.get_state_history(config)
 
 
 if __name__ == "__main__":
@@ -270,12 +278,19 @@ if __name__ == "__main__":
     # graph.get_graph().draw_mermaid_png(filename="graph.png")
 
     inputs = "What are the models released today for llama3.2?"
+
+    # 配置快照信息，用于记录每次执行的快照信息
+    config = {"configurable": {"thread_id": uuid4()}}
     # inputs = "截止到今天llama3.2已经发布了哪些版本的模型"
     result = []
-    for event in graph.stream(inputs):
+    for event in graph.stream(inputs, config):
         # print(type(event["generation"]))
         # print(event)
 
         if "generation" in event and event["generation"]:
             result.append(event["generation"].content)
     print(result)
+
+    stat_history = list(graph.get_state_history(config))
+    for state in stat_history:
+        print(state)
