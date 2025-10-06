@@ -1,8 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
+import { useEffect } from 'react'
 import { useAuthStore } from '@/store/auth'
 import { authAPI } from '@/services/api'
-import type { LoginRequest, ChangePasswordRequest } from '@/types'
+import type { LoginRequest, ChangePasswordRequest, User } from '@/types'
 import toast from 'react-hot-toast'
 
 export function useAuth() {
@@ -11,18 +12,25 @@ export function useAuth() {
   const { user, token, isAuthenticated, setUser, setToken, logout: logoutStore } = useAuthStore()
 
   // 获取当前用户信息
-  const { data: currentUser, isLoading } = useQuery({
+  const { data: currentUser, isLoading, isError } = useQuery<User>({
     queryKey: ['auth', 'me'],
     queryFn: authAPI.getCurrentUser,
     enabled: isAuthenticated && !!token,
-    onSuccess: (data) => {
-      setUser(data)
-    },
-    onError: () => {
+  })
+
+  // React Query v5: 使用 useEffect 替代 onSuccess/onError
+  useEffect(() => {
+    if (currentUser) {
+      setUser(currentUser)
+    }
+  }, [currentUser, setUser])
+
+  useEffect(() => {
+    if (isError && isAuthenticated) {
       logoutStore()
       navigate('/login')
-    },
-  })
+    }
+  }, [isError, isAuthenticated, logoutStore, navigate])
 
   // 登录
   const loginMutation = useMutation({

@@ -4,15 +4,15 @@ import { zhCN } from 'date-fns/locale'
 import { useAuth } from '@/hooks/useAuth'
 import { UserAvatar } from '@/components/users/UserAvatar'
 import { ROLE_LABELS, ROLE_DESCRIPTIONS, PERMISSION_LABELS } from '@/types'
-import type { ChangePasswordRequest } from '@/types'
+import type { ChangePasswordRequest, UserRole } from '@/types'
 
-const ROLE_BADGES = {
+const ROLE_BADGES: Record<UserRole, string> = {
   admin: 'bg-red-100 text-red-800 border-red-300',
   editor: 'bg-blue-100 text-blue-800 border-blue-300',
   viewer: 'bg-gray-100 text-gray-800 border-gray-300',
 }
 
-const ROLE_ICONS = {
+const ROLE_ICONS: Record<UserRole, string> = {
   admin: '🛡️',
   editor: '✏️',
   viewer: '👁️',

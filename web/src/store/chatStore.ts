@@ -11,12 +11,7 @@
 
 import { create } from 'zustand'
 import { devtools, persist } from 'zustand/middleware'
-import {
-  ChatState,
-  ChatMessage,
-  WorkflowStep,
-  DocumentSource
-} from '../types/chat'
+import type { ChatState } from '../types/chat'
 
 /**
  * 聊天状态Store
@@ -24,7 +19,7 @@ import {
 export const useChatStore = create<ChatState>()(
   devtools(
     persist(
-      (set, get) => ({
+      (set) => ({
         // ========== 会话状态 ==========
         currentSessionId: null,
         setCurrentSessionId: (id) => set({ currentSessionId: id }),

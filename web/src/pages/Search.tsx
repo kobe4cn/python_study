@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { SearchBar } from '@/components/search/SearchBar'
 import { SearchResults } from '@/components/search/SearchResults'
@@ -17,14 +17,18 @@ export function Search() {
   })
 
   // 执行搜索
-  const { isLoading } = useQuery({
+  const { data: searchData, isLoading } = useQuery<SearchResponse>({
     queryKey: ['search', searchRequest],
     queryFn: () => searchAPI.search(searchRequest!),
     enabled: !!searchRequest,
-    onSuccess: (data) => {
-      setSearchResponse(data)
-    },
   })
+
+  // React Query v5: 使用 useEffect 替代 onSuccess
+  useEffect(() => {
+    if (searchData) {
+      setSearchResponse(searchData)
+    }
+  }, [searchData])
 
   const handleSearch = (request: SearchRequest) => {
     setSearchRequest(request)

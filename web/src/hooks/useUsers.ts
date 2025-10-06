@@ -102,8 +102,6 @@ export function useUsers(params?: UseUsersParams) {
 
 // 获取单个用户详情
 export function useUser(userId: string) {
-  const queryClient = useQueryClient()
-
   const { data: user, isLoading, error } = useQuery({
     queryKey: ['users', userId],
     queryFn: () => userAPI.get(userId),

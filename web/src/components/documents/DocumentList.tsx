@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Search, Filter, SortAsc, Trash2, Loader2 } from 'lucide-react'
+import { Search, Filter, SortAsc, Trash2 } from 'lucide-react'
 import { DocumentCard } from './DocumentCard'
 import { Button } from '@/components/common/Button'
 import { Input } from '@/components/common/Input'

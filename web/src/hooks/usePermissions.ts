@@ -1,5 +1,4 @@
 import { useAuthStore } from '@/store/auth'
-import type { Permission } from '@/types'
 
 export function usePermissions() {
   const { user, hasPermission, hasAnyPermission, hasAllPermissions } = useAuthStore()

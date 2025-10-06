@@ -6,7 +6,6 @@ import { useUser } from '@/hooks/useUsers'
 import { UserAvatar } from '@/components/users/UserAvatar'
 import { UserForm } from '@/components/users/UserForm'
 import { ROLE_LABELS, ROLE_DESCRIPTIONS, PERMISSION_LABELS } from '@/types'
-import type { UpdateUserRequest } from '@/types'
 
 const ROLE_BADGES = {
   admin: 'bg-red-100 text-red-800 border-red-300',
