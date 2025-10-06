@@ -2,11 +2,17 @@ from __future__ import annotations
 import logging
 from typing import List, Literal, Optional
 from pydantic import BaseModel, Field, field_validator
-from langchain_text_splitters import (
-    ExperimentalMarkdownSyntaxTextSplitter,
-    MarkdownTextSplitter,
-    TextSplitter,
-)
+from langchain_text_splitters import MarkdownTextSplitter, TextSplitter
+
+try:  # 新版本提供的更精细的语法分割器
+    from langchain_text_splitters import ExperimentalMarkdownSyntaxTextSplitter
+except ImportError:  # 旧版本缺少该类
+    ExperimentalMarkdownSyntaxTextSplitter = None  # type: ignore[assignment]
+
+try:  # 向后兼容旧版本的标题分割器
+    from langchain_text_splitters import MarkdownHeaderTextSplitter
+except ImportError:  # pragma: no cover - 极端情况下的兜底
+    MarkdownHeaderTextSplitter = None  # type: ignore[assignment]
 from tqdm import tqdm
 from langchain_core.documents import Document
 from transformers import AutoTokenizer
@@ -79,9 +85,7 @@ class MdSplitter:
         )
 
         # 初始化标题分割器
-        self._header_splitter = ExperimentalMarkdownSyntaxTextSplitter(
-            headers_to_split_on=self.config.headers
-        )
+        self._header_splitter = self._initialize_header_splitter()
 
         # 初始化token分割器
         self._token_splitter = self._initialize_token_splitter()
@@ -111,6 +115,25 @@ class MdSplitter:
             raise ValueError(
                 f"无法初始化tokenizer '{self.config.encoding_name}': {e}"
             ) from e
+
+    def _initialize_header_splitter(self):
+        """根据可用依赖初始化标题分割器"""
+        if ExperimentalMarkdownSyntaxTextSplitter is not None:
+            return ExperimentalMarkdownSyntaxTextSplitter(
+                headers_to_split_on=self.config.headers
+            )
+        if MarkdownHeaderTextSplitter is not None:
+            logger.warning(
+                "ExperimentalMarkdownSyntaxTextSplitter 不可用，"
+                "回退至 MarkdownHeaderTextSplitter"
+            )
+            return MarkdownHeaderTextSplitter(
+                headers_to_split_on=self.config.headers,
+                strip_headers=False,
+            )
+        raise ImportError(
+            "无法找到可用的 Markdown 分割器实现，请更新 langchain_text_splitters 库"
+        )
 
     def split(
         self, docs: List[Document], show_progress: bool = False
