@@ -1,15 +1,15 @@
-"""
-配置管理模块
-使用Pydantic Settings进行环境变量管理
+"""配置管理模块.
+
+使用Pydantic Settings进行环境变量管理。
 """
 
 from __future__ import annotations
 
-from typing import List, Optional
+import secrets
+from pathlib import Path
+
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pathlib import Path
-import secrets
 
 try:
     import json_log_formatter  # type: ignore
@@ -18,7 +18,7 @@ except ImportError:
 
 
 class Settings(BaseSettings):
-    """应用配置类"""
+    """应用配置类."""
 
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", case_sensitive=False, extra="ignore"
@@ -38,27 +38,27 @@ class Settings(BaseSettings):
     )
 
     # ========== 服务器配置 ==========
-    host: str = Field(default="0.0.0.0", description="服务器主机地址")
+    host: str = Field(default="0.0.0.0", description="服务器主机地址")  # noqa: S104
     port: int = Field(default=8000, gt=0, lt=65536, description="服务器端口")
     workers: int = Field(default=4, gt=0, le=32, description="工作进程数")
     reload: bool = Field(default=False, description="热重载")
 
     # ========== TLS/SSL配置 ==========
     use_https: bool = Field(default=False, description="启用HTTPS")
-    ssl_certfile: Optional[str] = Field(default=None, description="SSL证书文件路径")
-    ssl_keyfile: Optional[str] = Field(default=None, description="SSL密钥文件路径")
-    ssl_ca_certs: Optional[str] = Field(default=None, description="CA证书文件路径")
+    ssl_certfile: str | None = Field(default=None, description="SSL证书文件路径")
+    ssl_keyfile: str | None = Field(default=None, description="SSL密钥文件路径")
+    ssl_ca_certs: str | None = Field(default=None, description="CA证书文件路径")
     ssl_cert_reqs: int = Field(default=0, description="SSL证书验证要求")
 
     # ========== CORS配置 ==========
     cors_enabled: bool = Field(default=True, description="启用CORS")
-    cors_origins: List[str] = Field(
+    cors_origins: list[str] = Field(
         default=["http://localhost:3000", "http://localhost:8080"],
         description="允许的源",
     )
     cors_allow_credentials: bool = Field(default=True, description="允许凭据")
-    cors_allow_methods: List[str] = Field(default=["*"], description="允许的方法")
-    cors_allow_headers: List[str] = Field(default=["*"], description="允许的头部")
+    cors_allow_methods: list[str] = Field(default=["*"], description="允许的方法")
+    cors_allow_headers: list[str] = Field(default=["*"], description="允许的头部")
 
     # ========== 安全配置 ==========
     secret_key: str = Field(
@@ -74,7 +74,7 @@ class Settings(BaseSettings):
 
     # API密钥认证
     api_key_header_name: str = Field(default="X-API-Key", description="API密钥头名称")
-    api_keys: List[str] = Field(default=[], description="有效的API密钥列表")
+    api_keys: list[str] = Field(default=[], description="有效的API密钥列表")
 
     # ========== 速率限制配置 ==========
     rate_limit_enabled: bool = Field(default=True, description="启用速率限制")
@@ -86,7 +86,7 @@ class Settings(BaseSettings):
     max_upload_size: int = Field(
         default=50 * 1024 * 1024, description="最大上传大小(50MB)"
     )
-    allowed_file_types: List[str] = Field(
+    allowed_file_types: list[str] = Field(
         default=[
             "application/pdf",
             "text/plain",
@@ -98,7 +98,7 @@ class Settings(BaseSettings):
         ],
         description="允许的文件类型",
     )
-    allowed_file_extensions: List[str] = Field(
+    allowed_file_extensions: list[str] = Field(
         default=[".pdf", ".txt", ".md", ".doc", ".docx", ".html", ".json"],
         description="允许的文件扩展名",
     )
@@ -125,12 +125,12 @@ class Settings(BaseSettings):
     # ========== 日志配置 ==========
     log_level: str = Field(default="INFO", description="日志级别")
     log_format: str = Field(default="json", description="日志格式 (json/text)")
-    log_file: Optional[str] = Field(default=None, description="日志文件路径")
+    log_file: str | None = Field(default=None, description="日志文件路径")
 
     # ========== OpenTelemetry配置 ==========
     otel_enabled: bool = Field(default=False, description="启用OpenTelemetry")
     otel_service_name: str = Field(default="document-api", description="服务名称")
-    otel_exporter_endpoint: Optional[str] = Field(
+    otel_exporter_endpoint: str | None = Field(
         default=None, description="导出器端点"
     )
 
@@ -143,7 +143,7 @@ class Settings(BaseSettings):
     redis_host: str = Field(default="localhost", description="Redis主机地址")
     redis_port: int = Field(default=6379, gt=0, lt=65536, description="Redis端口")
     redis_db: int = Field(default=0, ge=0, description="Redis数据库")
-    redis_password: Optional[str] = Field(default=None, description="Redis密码")
+    redis_password: str | None = Field(default=None, description="Redis密码")
     cache_ttl: int = Field(default=300, gt=0, description="缓存TTL(秒)")
 
     # ========== 数据库配置 ==========

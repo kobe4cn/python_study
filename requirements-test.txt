@@ -1,0 +1,17 @@
+# 测试依赖
+pytest>=7.0
+pytest-cov>=4.0
+pytest-asyncio>=0.21.0
+pytest-mock>=3.11.0
+pytest-timeout>=2.1.0
+
+# 代码质量工具
+ruff>=0.1.0
+mypy>=1.0
+bandit>=1.7.5
+
+# 类型存根
+types-python-jose
+types-passlib
+types-redis
+types-requests
