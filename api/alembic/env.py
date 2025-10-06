@@ -1,24 +1,22 @@
-"""
-Alembic环境配置
-支持自动生成迁移和离线/在线模式
+"""Alembic环境配置.
+
+支持自动生成迁移和离线/在线模式。
 """
 
-from logging.config import fileConfig
 import sys
+from logging.config import fileConfig
 from pathlib import Path
 
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
-
 from alembic import context
+from sqlalchemy import engine_from_config, pool
 
 # 添加项目根目录到Python路径
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 # 导入配置和模型
-from core.config import get_settings
-from api.database.models import Base
+from api.database.models import Base  # noqa: E402
+from core.config import get_settings  # noqa: E402
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
