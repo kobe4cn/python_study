@@ -28,6 +28,7 @@ class DocumentService:
     def __init__(self):
         """初始化文档服务"""
         self.upload_dir = settings.upload_dir
+        self._file_lock = asyncio.Lock()  # 实例级文件锁,保护并发文件操作
 
     async def process_file_upload(
         self,
@@ -276,13 +277,25 @@ class DocumentService:
             suffix = file_path.suffix
             file_path = self.upload_dir / f"{name}_{timestamp}{suffix}"
 
-        # 异步写入文件
-        async with asyncio.Lock():
-            with open(file_path, "wb") as f:
-                f.write(file_content)
+        # 异步写入文件 - 使用实例级锁保护并发访问
+        async with self._file_lock:
+            # 使用线程池执行IO操作,避免阻塞事件循环
+            await asyncio.to_thread(self._write_file_sync, file_path, file_content)
 
         logger.info(f"文件已保存: {file_path}")
         return file_path
+
+    @staticmethod
+    def _write_file_sync(file_path: Path, content: bytes) -> None:
+        """
+        同步写入文件(在线程池中执行)
+
+        Args:
+            file_path: 文件路径
+            content: 文件内容
+        """
+        with open(file_path, "wb") as f:
+            f.write(content)
 
     @staticmethod
     def _sanitize_filename(filename: str) -> str:

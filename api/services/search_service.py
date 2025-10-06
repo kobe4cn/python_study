@@ -9,7 +9,7 @@ import logging
 import asyncio
 import hashlib
 import json
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 from langchain_core.documents import Document
 
 from api.config import settings
@@ -72,29 +72,43 @@ class SearchService:
                     took_ms = (time.time() - start_time) * 1000
                     return json.loads(cached_result), took_ms
 
-            # 2. 执行搜索
+            # 2. 执行搜索 - 使用带分数的搜索方法
             vstore = get_vector_store(collection_name)
-            results = await asyncio.to_thread(
-                vstore.vstore.search,
-                query,
-                k=top_k,
-                filter_dict=filter_metadata
-            )
+
+            if include_scores:
+                # 使用similarity_search_with_score获取分数
+                results_with_scores = await asyncio.to_thread(
+                    vstore.vstore.similarity_search_with_score,
+                    query,
+                    k=top_k,
+                    filter=filter_metadata
+                )
+            else:
+                # 普通搜索
+                docs = await asyncio.to_thread(
+                    vstore.vstore.search,
+                    query,
+                    k=top_k,
+                    filter_dict=filter_metadata
+                )
+                results_with_scores = [(doc, None) for doc in docs]
 
             # 3. 格式化结果
             formatted_results = []
-            for idx, doc in enumerate(results):
+            for doc, score in results_with_scores:
+                # 从元数据获取真实的文档ID
+                doc_id = doc.metadata.get("doc_id") or doc.metadata.get("id") or f"{collection_name}_{hash(doc.page_content) % 10000}"
+
                 result_item = {
-                    "doc_id": f"{collection_name}_{idx}",  # 实际应该有真实的ID
+                    "doc_id": doc_id,
                     "content": doc.page_content,
                 }
 
                 if include_metadata:
                     result_item["metadata"] = doc.metadata
 
-                if include_scores:
-                    # 注意：需要使用similarity_search_with_score获取分数
-                    result_item["score"] = None
+                if include_scores and score is not None:
+                    result_item["score"] = float(score)
 
                 formatted_results.append(result_item)
 

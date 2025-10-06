@@ -141,10 +141,27 @@ class Container:
             >>> retriever = container.get_retriever()
             >>> docs = retriever.invoke("搜索查询")
         """
-        # TODO: 实现通用检索器工厂
-        # 支持多种向量数据库(Qdrant/Pinecone/Weaviate)
-        logger.warning("get_retriever 方法尚未完全实现")
-        return None
+        if self._retriever is None:
+            from doc.vstore.vstore_main import VStoreMain, VectorStoreProvider
+
+            # 从配置获取参数
+            collection = collection_name or self.settings.vector.qdrant_collection
+            k = top_k or self.settings.document.top_k
+
+            logger.info(f"初始化检索器: collection={collection}, top_k={k}")
+
+            self._retriever = VStoreMain(
+                vector_store_provider=VectorStoreProvider.QDRANT,
+                collection_name=collection,
+                host=self.settings.vector.qdrant_host,
+                port=self.settings.vector.qdrant_port,
+                embedding_model=self.settings.vector.embedding_model,
+                top_k=k,
+            )
+
+            logger.info(f"检索器实例创建成功: {collection}")
+
+        return self._retriever
 
     def get_graph_dependencies(self) -> Dict[str, Any]:
         """

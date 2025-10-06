@@ -277,10 +277,22 @@ class UdfTools:
             if output_format == "string":
                 return {"content": str_docs}
             elif output_format == "document":
+                from datetime import datetime
+
+                # 收集搜索结果的URL
+                urls = [result.get("url", "") for result in docs.get("results", [])]
+
                 return {
                     "content": Document(
                         page_content=str_docs,
-                        # metadata={"source": "tavily_search", "query": query},
+                        metadata={
+                            "source": "tavily_search",
+                            "query": query,
+                            "search_timestamp": datetime.utcnow().isoformat(),
+                            "num_results": len(docs.get("results", [])),
+                            "urls": urls,
+                            "search_engine": "tavily",
+                        }
                     )
                 }
             else:

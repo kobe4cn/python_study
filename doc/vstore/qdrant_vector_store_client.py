@@ -143,10 +143,28 @@ class QdrantVectorStoreClient:
 
     @lru_cache(maxsize=1)
     def _get_vector_size(self) -> int:
-        """获取向量维度（缓存结果）"""
-        sample_text = "获取向量维度的示例文本"
-        vector = self.embeddings.embed_query(sample_text)
-        return len(vector)
+        """
+        获取向量维度（缓存结果）
+
+        优先从配置读取,仅在必要时调用嵌入服务
+        避免初始化时依赖外部服务
+        """
+        # 优先从配置获取维度
+        if hasattr(self.config, 'embedding_dimension') and self.config.embedding_dimension:
+            logger.info(f"从配置获取向量维度: {self.config.embedding_dimension}")
+            return self.config.embedding_dimension
+
+        # 仅在必要时调用嵌入服务
+        try:
+            logger.info("调用嵌入服务获取向量维度")
+            sample_text = "test"
+            vector = self.embeddings.embed_query(sample_text)
+            dimension = len(vector)
+            logger.info(f"从嵌入服务获取向量维度: {dimension}")
+            return dimension
+        except Exception as e:
+            logger.warning(f"无法从嵌入服务获取向量维度: {e}, 使用默认值1536")
+            return 1536  # 默认维度(DashScope text-embedding-v3)
 
     def _ensure_collection_exists(self, vector_size: int) -> None:
         """确保集合存在"""
@@ -248,12 +266,24 @@ class QdrantVectorStoreClient:
         Args:
             metadata_filter: 元数据过滤条件
         """
-        filter_condition = self._build_filter(metadata_filter)
+        from qdrant_client.models import Filter, FieldCondition, MatchValue, FilterSelector
+
+        # 构建正确的Filter对象
+        filter_obj = Filter(
+            must=[
+                FieldCondition(
+                    key=key,
+                    match=MatchValue(value=value)
+                )
+                for key, value in metadata_filter.items()
+            ]
+        )
 
         try:
+            # 使用FilterSelector包装Filter对象
             self.client.delete(
                 collection_name=self.config.collection_name,
-                points_selector=filter_condition
+                points_selector=FilterSelector(filter=filter_obj)
             )
             logger.info(f"删除文档成功: {metadata_filter}")
         except Exception as e:
